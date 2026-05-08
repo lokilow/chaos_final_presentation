@@ -330,19 +330,20 @@ for (ax, CL) in ((ax_rss, CL_RSS), (ax_ra, CL_RA))
            color=(:royalblue, 0.2), linewidth=0.7)
     # Prediction colored by time: plasma goes purple→red→yellow
     lines!(ax, CL[1,1:n_att], CL[3,1:n_att];
-           color=t_col, colormap=:plasma, colorrange=(0, n_att*ΔT), linewidth=1.1)
+           color=t_col, colormap=:turbo, colorrange=(0, n_att*ΔT), linewidth=1.1)
 end
 
 # Shared colorbar for the time axis
-Colorbar(fig_cl[1,3]; colormap=:plasma, limits=(0, n_att*ΔT),
+Colorbar(fig_cl[1,3]; colormap=:turbo, limits=(0, n_att*ΔT),
          label="prediction time (model units)", width=14)
 
 # Time series: bright = tracking, faded = diverging
+ts_xlim = min(max(vt_RSS, vt_RA) * 4.0, 12.0)   # zoom to ~4× the longer valid time
 ax_ts = Axis(fig_cl[2,1:2];
              title="Closed-loop B₂ — tracking then diverging (1 Lyapunov ≈ 1.1 t)",
              xlabel="time (model units)",
              ylabel="B₂ (normalised)",
-             limits=(nothing, nothing, -CL_CLIP-0.1, CL_CLIP+0.1))
+             limits=(0, ts_xlim, -CL_CLIP-0.1, CL_CLIP+0.1))
 
 # Lyapunov time guides
 for lya in 1.1:1.1:t_axis[end]
