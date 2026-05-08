@@ -276,11 +276,11 @@ topo_colors = [:steelblue, :mediumseagreen, :darkorange, :mediumpurple, :firebri
 
 # Figure 1: 5 reservoir matrix heatmaps
 fig1  = Figure(size=(1400, 310))
-clim1 = maximum(maximum(abs.(Matrix(Ws[t.name][1:32,1:32]))) for t in TOPOS)
+clim1 = maximum(maximum(abs.(Matrix(Ws[t.name][1:64,1:64]))) for t in TOPOS)
 for (i, topo) in enumerate(TOPOS)
-    W32 = Matrix(Ws[topo.name][1:32, 1:32])
+    W32 = Matrix(Ws[topo.name][1:64, 1:64])
     ax  = Axis(fig1[1,i]; title=topo.name, xlabel="j", ylabel=i==1 ? "i" : "",
-               aspect=DataAspect())
+               aspect=DataAspect(), yreversed=true)
     hm  = heatmap!(ax, W32; colormap=:RdBu, colorrange=(-clim1, clim1))
     i == length(TOPOS) && Colorbar(fig1[1,i+1], hm; label="wᵢⱼ", width=14)
 end
