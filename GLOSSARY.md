@@ -14,7 +14,7 @@ Definitions of every relevant term for the talk on Rathor, Jaurigue, Ziegler & S
 
 **Reservoir.** The fixed random recurrent network at the heart of an ESN. Conceptually plays two roles simultaneously: a *nonlinear feature expansion* of the input into a much higher-dimensional space, and a *fading memory* that mixes the input's recent history into the current state.
 
-**Reservoir state $r(k)$ (also $x(n)$).** The vector of neuron activations at discrete time step $k$. Lives in $\mathbb{R}^N$ where $N$ is the reservoir size (here $N = 1024$).
+**Reservoir state $r(k)$** (also written $x(n)$ in the practical-ESN literature). The vector of neuron activations at discrete time step $k$. Lives in $\mathbb{R}^N$ where $N$ is the reservoir size (here $N = 1024$).
 
 **Reservoir update equation.** The discrete-time dynamics of the reservoir state:
 $$r(k+1) = (1-\varepsilon)\,r(k) + \varepsilon \tanh\!\big(W r(k) + W_{\text{in}} u(k+1) + b\big)$$
@@ -54,7 +54,7 @@ Equivalent to looping the predicted output back into the input channel. Increase
 
 **Topology.** The wiring pattern of the reservoir matrix $W$ — which nodes connect to which, and what weights those connections carry. Independently of *size* and *spectral radius*, topology can in principle reshape what dynamics the reservoir supports.
 
-**Hadamard product ($\odot$).** Element-wise matrix multiplication: $(A \odot W_c)_{ij} = A_{ij} W_{c,ij}$. Used in the paper to decouple connectivity from weights.
+**Hadamard product ($\odot$).** Element-wise matrix multiplication: the $(i,j)$ entry of $A \odot W_c$ is the product of $A_{ij}$ and $W_{c,ij}$. Used in the paper to decouple connectivity from weights.
 
 **Connection matrix $A$.** Binary adjacency matrix specifying which node-to-node edges exist. $A_{ij} = 1$ if there is an edge $j \to i$, else $0$.
 
@@ -164,9 +164,7 @@ With $\tau = 17$, parameters $a=0.2, b=0.1, q=10$, it generates a chaotic 1D tim
 
 **Shear flow (SF).** A nine-mode Galerkin model of three-dimensional plane Couette-like shear flow between free-slip walls (Moehlis–Faisst–Eckhardt 2004). The minimal flow unit for studying the self-sustaining process near transition to turbulence. $N_{\text{DoF}} = 9$, $\lambda_{\max} \approx 0.02$, $D_{KY} \approx 6.25$. Highest dimensional, the most "complex chaos" — and the system that turns out to be **topology-indifferent**.
 
-**Lorenz-96 (L96).** *Mentioned but not studied* in the Rathor paper. Edward Lorenz's 1996 toy model for atmospheric circulation:
-$$\dot{x}_i = (x_{i+1} - x_{i-2}) x_{i-1} - x_i + F$$
-on a periodic ring of $N$ sites, with forcing $F$ (typically $F = 8$ for chaos, $N$ in the range 36–40 for "global circulation"-scale studies). The advection-like quadratic coupling and constant forcing make it a standard benchmark for chaotic spatiotemporal prediction — much higher-dimensional than L63 yet still cheap to integrate. The Rathor authors speculate (Sec V) that their topology-insensitivity finding for SF will extend to L96 because the polynomial degree of the nonlinearity is the same. Often referred to informally as "the big Lorenz weather model."
+**Lorenz-96 (L96).** *Mentioned but not studied* in the Rathor paper. Edward Lorenz's 1996 toy model for atmospheric circulation, defined on a periodic ring of $N$ sites by $\dot{x}_i = (x_{i+1} - x_{i-2})\,x_{i-1} - x_i + F$, with forcing $F$ (typically $F = 8$ for chaos, $N$ in the range 36–40 for "global circulation"-scale studies). The advection-like quadratic coupling and constant forcing make it a standard benchmark for chaotic spatiotemporal prediction — much higher-dimensional than L63 yet still cheap to integrate. The Rathor authors speculate (Sec V) that their topology-insensitivity finding for SF will extend to L96 because the polynomial degree of the nonlinearity is the same. Often referred to informally as "the big Lorenz weather model."
 
 **Rayleigh–Bénard convection.** Buoyancy-driven flow of a fluid heated from below and cooled from above between two parallel plates. The classical pattern-forming, route-to-chaos system. Source of L63 and L8.
 
