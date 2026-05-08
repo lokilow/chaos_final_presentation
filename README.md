@@ -22,5 +22,6 @@ Outputs figures to `figures/` and scores to `outputs/results.json`.
 ## See also
 
 My half baked chaos visualizations
-[github repo](https://github.com/lokilow/chaos-viz)
-[site](https://lokilow.github.io/chaos-viz/)
+
+- [github repo](https://github.com/lokilow/chaos-viz)
+- [site](https://lokilow.github.io/chaos-viz/)
