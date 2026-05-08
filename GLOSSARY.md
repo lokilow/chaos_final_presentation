@@ -10,6 +10,8 @@ Definitions of every relevant term for the talk on Rathor, Jaurigue, Ziegler & S
 
 **Echo state network (ESN).** The canonical implementation of reservoir computing. A discrete-time recurrent network with random fixed input weights $W_{\text{in}}$ and random fixed recurrent weights $W$, a tanh nonlinearity, optional **leaky integration**, and a trained linear output matrix $W_{\text{out}}$. Introduced by Jaeger (2001).
 
+**Liquid state machine (LSM).** A reservoir-computing variant introduced contemporaneously by Maass, Natschläger & Markram (2002) for computational neuroscience. Uses spiking neurons rather than tanh units, but the same conceptual move: a fixed random recurrent network feeding a trained linear readout. ESNs and LSMs are usually treated as two flavors of the same RC paradigm.
+
 **Reservoir.** The fixed random recurrent network at the heart of an ESN. Conceptually plays two roles simultaneously: a *nonlinear feature expansion* of the input into a much higher-dimensional space, and a *fading memory* that mixes the input's recent history into the current state.
 
 **Reservoir state $r(k)$ (also $x(n)$).** The vector of neuron activations at discrete time step $k$. Lives in $\mathbb{R}^N$ where $N$ is the reservoir size (here $N = 1024$).
@@ -26,7 +28,13 @@ The first term is the leak from the previous state, the second is the new contri
 
 **Open-loop prediction.** Each time step the reservoir is fed the *true* next input from the ground truth and asked to predict the next state. One-step prediction; no error compounding. The setting used throughout this paper.
 
-**Closed-loop prediction.** The reservoir's own output is fed back as the next input. Errors compound, so trajectories eventually diverge from ground truth — this is where the **Lyapunov time** matters.
+**Closed-loop prediction (generative mode).** The reservoir's own output is fed back as the next input. Errors compound, so trajectories eventually diverge from ground truth — this is where the **Lyapunov time** matters. Also called *generative mode* when the goal is to produce a free-running trajectory rather than score short-horizon error.
+
+**Output feedback ($W_{\text{fb}}$).** An optional fixed matrix that feeds the previous output $y(n-1)$ back into the reservoir state update:
+$$\tilde{x}(n) = \tanh\!\big(W_{\text{in}}[1; u(n)] + W x(n-1) + W_{\text{fb}} y(n-1)\big).$$
+Equivalent to looping the predicted output back into the input channel. Increases representational power but introduces stability problems during training — the trained dynamics now depend on the readout, so a half-trained readout can blow up. Not used by the Rathor paper.
+
+**Teacher forcing.** A trick for training ESNs with output feedback. During training, feed the *target* signal $y^{\text{target}}(n-1)$ — not the reservoir's actual prediction — through $W_{\text{fb}}$. This breaks the recurrence between reservoir and readout, turning the learning problem back into vanilla one-shot ridge regression. Standard practice when feedback is needed.
 
 **Dynamics prediction task (DPT).** The paper's umbrella term for predicting the full $M$-component state $y(k) = [y_1, \ldots, y_M]^T$ at the next time step from a (possibly partial) input $u(k)$. A DPT decomposes into $M$ component-wise prediction subtasks, each either **direct** or **cross**.
 
@@ -90,6 +98,12 @@ The first term is the leak from the previous state, the second is the new contri
 $$W_{\text{out}} = Y^{\text{target}} X^T (XX^T + \gamma I)^{-1}$$
 The standard, recommended way to train ESN readouts. Stable, one-shot, regularized.
 
+**Design matrix $X$.** The $(1 + N_u + N_x) \times T$ matrix whose columns are the concatenated inputs and reservoir states $[1; u(n); x(n)]$ collected over the training period. The object actually plugged into the ridge-regression formula.
+
+**Moore–Penrose pseudoinverse $X^+$.** A generalized matrix inverse that solves the least-squares problem $W_{\text{out}} = Y^{\text{target}} X^+$ even when $XX^T$ is singular. An alternative to ridge regression with no regularization — high precision but vulnerable to overfitting.
+
+**Memory capacity (MC).** A scalar measure of how much past input an ESN can reconstruct via its readout. Bounded above by reservoir size $N_x$ for linear reservoirs (Jaeger 2002). A tradeoff with **nonlinear capacity**: more nonlinearity, less memory.
+
 **Leaking rate $\varepsilon$ (also $\alpha$).** The mixing coefficient in the leaky-integrator update; an Euler discretization of a continuous-time ODE. Smaller $\varepsilon$ slows reservoir dynamics, lengthens memory; the paper fixes $\varepsilon = 0.7$.
 
 ---
@@ -105,6 +119,24 @@ The standard, recommended way to train ESN readouts. Stable, one-shot, regulariz
 **Reservoir computing time step $\Delta t$.** The sampling interval at which the input is fed to the RC. A multiple of the underlying dynamical system's integration step $\delta t$. Optimized per task; e.g. $\Delta t = 0.05$ for L63.
 
 **Integration time step $\delta t$.** The step size used by the numerical integrator that generates the ground-truth trajectory of the dynamical system (e.g. $\delta t = 0.002$ for L63).
+
+---
+
+## Online learning algorithms
+
+The Rathor paper uses the standard one-shot ridge regression. But the practical-ESN guide describes several alternative *online* readout-training methods that show up in the broader RC literature.
+
+**Online learning.** Updating $W_{\text{out}}$ incrementally as new data arrives, rather than fitting it once on a complete training set. Required when the data-generating process is non-stationary, or when feedback connections are present and the readout has to adapt while running.
+
+**Least Mean Squares (LMS).** A first-order stochastic gradient method: at each step, nudge $W_{\text{out}}$ in the direction that reduces the instantaneous squared error. Simple and cheap, but converges slowly when the eigenvalues of $XX^T$ are spread over many orders of magnitude — exactly the situation in a high-dimensional reservoir.
+
+**Recursive Least Squares (RLS).** An online algorithm that minimizes an exponentially-discounted version of the squared error
+$$E(y, y^{\text{target}}, n) = \frac{1}{N_y} \sum_i \sum_{j=1}^{n} \lambda^{n-j} (y_i(j) - y_i^{\text{target}}(j))^2$$
+where $\lambda \in (0, 1]$ is a forgetting factor. Insensitive to eigenvalue spread, much faster convergence than LMS, but quadratic in the number of weights and numerically delicate.
+
+**BackPropagation-DeCorrelation (BPDC).** A specialized online RC algorithm (Steil 2004) with linear-time-per-step complexity. Designed for tasks with output feedback. Tracks rapidly changing signals well but has a short effective memory.
+
+**FORCE learning.** An online method (Sussillo & Abbott 2009) that uses RLS to aggressively pull $W_{\text{out}}$ toward the target right from the start, suppressing the reservoir's spontaneous chaotic activity through the feedback loop. Well-suited to building stable neural pattern generators.
 
 ---
 
@@ -131,6 +163,10 @@ With $\tau = 17$, parameters $a=0.2, b=0.1, q=10$, it generates a chaotic 1D tim
 **Lorenz-type 8 (L8).** An eight-mode Galerkin extension of L63 (Gluhovsky–Tong–Agee 2002) that includes shear within the convection layer and conserves total energy and vorticity. $N_{\text{DoF}} = 8$, $\lambda_{\max} \approx 1.48$, $D_{KY} \approx 3.44$.
 
 **Shear flow (SF).** A nine-mode Galerkin model of three-dimensional plane Couette-like shear flow between free-slip walls (Moehlis–Faisst–Eckhardt 2004). The minimal flow unit for studying the self-sustaining process near transition to turbulence. $N_{\text{DoF}} = 9$, $\lambda_{\max} \approx 0.02$, $D_{KY} \approx 6.25$. Highest dimensional, the most "complex chaos" — and the system that turns out to be **topology-indifferent**.
+
+**Lorenz-96 (L96).** *Mentioned but not studied* in the Rathor paper. Edward Lorenz's 1996 toy model for atmospheric circulation:
+$$\dot{x}_i = (x_{i+1} - x_{i-2}) x_{i-1} - x_i + F$$
+on a periodic ring of $N$ sites, with forcing $F$ (typically $F = 8$ for chaos, $N$ in the range 36–40 for "global circulation"-scale studies). The advection-like quadratic coupling and constant forcing make it a standard benchmark for chaotic spatiotemporal prediction — much higher-dimensional than L63 yet still cheap to integrate. The Rathor authors speculate (Sec V) that their topology-insensitivity finding for SF will extend to L96 because the polynomial degree of the nonlinearity is the same. Often referred to informally as "the big Lorenz weather model."
 
 **Rayleigh–Bénard convection.** Buoyancy-driven flow of a fluid heated from below and cooled from above between two parallel plates. The classical pattern-forming, route-to-chaos system. Source of L63 and L8.
 
@@ -200,6 +236,7 @@ where $s$ is the largest integer such that the partial sum of Lyapunov exponents
 | $W$ | recurrent reservoir matrix |
 | $W_{\text{in}}$ | fixed random input matrix |
 | $W_{\text{out}}$ | trained linear readout |
+| $W_{\text{fb}}$ | optional output-feedback matrix |
 | $A$ | connection (adjacency) matrix |
 | $W_c$ | weight matrix |
 | $r(k)$ | reservoir state at step $k$ |
