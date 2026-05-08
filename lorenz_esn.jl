@@ -1,3 +1,46 @@
+# lorenz_esn.jl
+#
+# Reproduction of Rathor et al. (2026), Chaos 36, 033117
+# "Prediction performance of random reservoirs with different topology
+#  for nonlinear dynamical systems with different number of degrees of freedom"
+#
+# What this script does
+# ─────────────────────
+# 1. Generates a Lorenz 63 trajectory and normalises it to [-1, 1].
+# 2. Builds five Echo State Network (ESN) reservoir topologies that differ
+#    only in whether their adjacency matrix A and weight matrix W are
+#    symmetrised (Table II of the paper):
+#
+#      R-A   random asymmetric A,   asymmetric W  (baseline)
+#      RS-A  symmetrised random A,  asymmetric W
+#      RS-S  symmetrised random A,  symmetric W   ← best random topology
+#      WS-A  Watts–Strogatz A,      asymmetric W  (uniform degree ~8)
+#      WS-S  Watts–Strogatz A,      symmetric W   ← ties RS-S
+#
+# 3. For each topology: runs the reservoir in open-loop (feeding true B₁
+#    as input at every step), trains a ridge-regression readout to predict
+#    the full state (A₁, B₁, B₂), and evaluates MSE and per-component NRMSE
+#    on 2000 held-out test steps.
+#
+# 4. Runs a closed-loop demonstration for RS-S vs R-A: feeds the model's
+#    own B₁ prediction back as input and tracks how long the prediction
+#    stays coherent with the ground truth (the "valid time").
+#
+# Key result (reproduces paper Table III for L63)
+# ────────────────────────────────────────────────
+# Symmetrising the *weights* (not just the adjacency) is what drives the
+# improvement. RS-A and WS-A are no better than R-A; RS-S and WS-S are
+# ~3× better because cross-prediction (B₁ → A₁, B₁ → B₂) improves.
+#
+# Outputs
+# ───────
+#   figures/figure1_matrices.png    — 32×32 heatmaps of W for all 5 topologies
+#   figures/figure5_attractor.png   — open-loop attractor reconstruction (A₁ vs B₂)
+#   figures/figure6_mse.png         — total MSE comparison across topologies
+#   figures/figure7a_nrmse.png      — per-component NRMSE (matches paper Fig 7a)
+#   figures/figure_closedloop.png   — closed-loop RS-S vs R-A with time-gradient
+#   outputs/results.json            — numerical scores for all topologies
+
 using DifferentialEquations, LinearAlgebra, SparseArrays
 using Random, Statistics, Printf
 using CairoMakie, JSON
