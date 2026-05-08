@@ -1,4 +1,4 @@
-# Reservoir Topology & Lorenz 63
+# CYSYS 5766 - Final Presentation 
 
 Reproduction of results from Rathor et al. (2026) using Julia.
 
@@ -17,3 +17,10 @@ julia --project=. lorenz_esn.jl
 ```
 
 Outputs figures to `figures/` and scores to `outputs/results.json`.
+
+
+## See also
+
+My half baked chaos visualizations
+[github repo](https://github.com/lokilow/chaos-viz)
+[site](https://lokilow.github.io/chaos-viz/)
